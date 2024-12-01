@@ -3,19 +3,16 @@ use std::env;
 
 fn sum_distance(l: Vec<i32>, r: Vec<i32>) -> i32{
     let mut sum: i32 = 0;
-    let mut i = 0;
-    while i < l.len(){
+    for i in 0..l.len(){
         sum += (r[i]-l[i]).abs();
-        i += 1;
     }
     return sum;
 }
 
 fn sum_similarity(l: Vec<i32>, r: Vec<i32>) -> i32{
     let mut sum = 0;
-    let mut l_i = 0;
-    while l_i < l.len() {
-        let target = l[l_i];
+    for i in 0..l.len(){
+        let target = l[i];
         let mut count = 0;
         for value in &r{
             if *value == target{
@@ -26,7 +23,6 @@ fn sum_similarity(l: Vec<i32>, r: Vec<i32>) -> i32{
             }
         }
         sum += count * target;
-        l_i += 1;
     }
     return sum;
 }
@@ -39,14 +35,10 @@ fn main() {
     let mut l:Vec<i32> = Vec::new();
     let mut r:Vec<i32> = Vec::new();
 
-    for pair in contents.lines(){
-        let values:Vec<&str> = pair.split("   ").collect();
-        l.push(values
-            .get(0).unwrap()
-            .parse().unwrap());
-        r.push(values
-            .get(1).unwrap()
-            .parse().unwrap());
+    for line in contents.lines(){
+        let values:Vec<&str> = line.split("   ").collect();
+        l.push(values[0].parse().unwrap());
+        r.push(values[1].parse().unwrap());
     }
     l.sort();
     r.sort();
