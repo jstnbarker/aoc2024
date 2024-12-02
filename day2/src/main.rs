@@ -1,10 +1,6 @@
 use std::fs;
 use std::env;
-
-// return usize::MAX if safe, otherwise return failing index
 fn is_safe(report: Vec<i32> ) -> bool {
-
-    // need to determine wether inc or dec
     let mut inc: bool = false;
     if report[0] < report[1] {
         inc = true;
@@ -31,7 +27,6 @@ fn is_safe(report: Vec<i32> ) -> bool {
 }
 
 fn dampener(report: Vec<i32>) -> bool {
-
     if is_safe(report.clone()){
         return true;
     } else {
@@ -45,8 +40,6 @@ fn dampener(report: Vec<i32>) -> bool {
         return false;
     }
 }
-
-// 458 too low
 
 fn main() {
     let args: Vec<String> = env::args().collect();
