@@ -13,10 +13,14 @@ fn is_safe(report: Vec<i32> ) -> bool{
         let a = report[i];
         let b = report[i+1];
 
-        if inc && a >= b {
-            return false;
-        } else if !inc && a <= b {
-            return false;
+        if inc{
+            if a >= b {
+                return false;
+            }
+        } else {
+            if !inc && a <= b {
+                return false;
+            }
         }
         if (a-b).abs() > 3 {
             return false;
