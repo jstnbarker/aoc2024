@@ -1,7 +1,8 @@
 use std::fs;
 use std::env;
 
-fn is_safe(report: Vec<i32> ) -> bool{
+// return usize::MAX if safe, otherwise return failing index
+fn is_safe(report: Vec<i32> ) -> bool {
 
     // need to determine wether inc or dec
     let mut inc: bool = false;
@@ -18,7 +19,7 @@ fn is_safe(report: Vec<i32> ) -> bool{
                 return false;
             }
         } else {
-            if !inc && a <= b {
+            if a <= b {
                 return false;
             }
         }
@@ -28,6 +29,25 @@ fn is_safe(report: Vec<i32> ) -> bool{
     }
     return true;
 }
+
+fn dampener(report: Vec<i32>) -> bool {
+
+    if is_safe(report.clone()){
+        return true;
+    } else {
+        for i in 0..report.len(){
+            let mut temp: Vec<i32> = report.clone();
+            temp.remove(i);
+            if is_safe(temp) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+// 458 too low
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let input = fs::read_to_string(args[1].clone())
@@ -35,12 +55,13 @@ fn main() {
 
     let mut safe_lines = 0;
     for line in input.lines(){
-        let mut values: Vec<i32> = vec![];
+        let mut report: Vec<i32> = vec![];
         for substr in line.split(" "){
-            values.push(substr.parse()
+            report.push(substr.parse()
                 .expect("Did not parse to int"));
         }
-        if is_safe(values) {
+
+        if dampener(report) {
             safe_lines += 1;
         }
     }
