@@ -14,17 +14,25 @@ fn multiply(expression: &str) -> i32 {
 fn main() {
     let args: Vec<String> = env::args().collect();
     let content = fs::read_to_string(args[1].clone()).unwrap();
-    let pattern = regex::Regex::new(r"mul\(\d*,\d*\)").unwrap();
+    let pattern = regex::Regex::new(r"mul\(\d*,\d*\)|do\(\)|don't\(\)").unwrap();
     let mut index = 0;
     let mut sum = 0;
+    let mut toggle:bool = true;
     loop {
         let current = pattern.find_at(&content,index);
         if current.is_none(){
             break;
         }
+        let keyword = current.unwrap().as_str();
+        if keyword == "do()"{
+            toggle = true;
+        } else if keyword == "don't()" {
+            toggle = false;
+        } else if toggle {
+            sum += multiply(keyword)
+
+        }
         index = current.unwrap().end();
-        let expr = current.unwrap().as_str();
-        sum += multiply(expr);
     }
     println!("{}",sum);
 }
