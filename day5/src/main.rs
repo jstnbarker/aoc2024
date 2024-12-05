@@ -48,24 +48,10 @@ fn main() {
     for update in updates{
         if check_update(update.clone(), rules.clone()) {
             sum += update[update.len()/2];
-            for value in update{
-                print!("{} ", value);
-            }
-            println!();
         }
     }
     println!("{}", sum);
 }
-/*
-fn get_applicable_rules(update: Vec<i32>, rules: Vec<[i32;2]>) -> Vec<[i32; 2]>{
-    let mut to_apply: Vec<[i32;2]> = Vec::new();
-    for page in 0..update.len(){
-        for rule in rules
-    }
-    return to_apply;
-}
-*/
-
 
 fn check_update(update: Vec<i32>, rules: Vec<[i32; 2]>) -> bool {
     for page in 0..update.len(){
