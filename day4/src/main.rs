@@ -12,15 +12,22 @@ fn main() {
         }
     }
     let mut total_xmas: i32 = 0;
+    let mut total_cross_mas: i32 = 0;
     for i in 0..characters.len(){
         for j in 0..characters[0].len(){
             let temp: char = characters[i][j];
             if temp == 'X'{
                 total_xmas += find_xword(i,j,characters.clone(),"XMAS".to_string());
             }
+            if temp == 'A'{
+                if validate_cross_mas(i,j,characters.clone()){
+                    total_cross_mas += 1;
+                }
+            }
         }
     }
     println!("{}", total_xmas);
+    println!("{}", total_cross_mas);
 }
 
 fn find_xword(i:usize, j: usize, characters: Vec<Vec<char>>, pattern: String) -> i32{
@@ -28,33 +35,75 @@ fn find_xword(i:usize, j: usize, characters: Vec<Vec<char>>, pattern: String) ->
     let mut sum: i32 = 0;
     for offset in offsets{
         let mut pos = [i,j];
-        let mut temp: String = characters[pos[0]][pos[1]].to_string();
-        while pattern.contains(&temp) {
-            // apply offset
-            let ni = pos[0] as i32 + offset[0];
-            let nj = pos[1] as i32 + offset[1];
-
-            // make sure applied offset is within boundaries
-            if ni >= 0 && ni < characters.len() as i32 {
-                pos[0] = ni as usize;
-            } else {
+        let mut builder: String = characters[pos[0]][pos[1]].to_string();
+        while pattern.contains(&builder) {
+            let check = add(pos, offset);
+            if check .is_none(){
                 break;
-            }
-            if nj >= 0 && nj < characters[0].len() as i32{
-                pos[1] = nj as usize;
             } else {
+                pos = check.unwrap();
+            }
+            // ensure current position is not beyond vector limits
+            if pos[0] >= characters.len() || pos[1] >= characters[0].len(){
                 break;
             }
 
-            // check character value at new pos
-            temp.push(characters[pos[0]][pos[1]]);
-            println!("{}", temp);
+            builder.push(characters[pos[0]][pos[1]]);
 
-            if temp == pattern{
+            if builder == pattern{
                 sum += 1;
                 break;
             }
         }
     }
     return sum;
+}
+
+fn validate_cross_mas(i: usize, j:usize, characters: Vec<Vec<char>>) -> bool {
+    let pattern = [[-1,-1],[1,1],[-1,1],[1,-1],];
+    let mut last = '.';
+    for k in 0..pattern.len(){
+        let mut pos = [i,j];
+        let check = add(pos, pattern[k]);
+        if check.is_none(){
+            return false;
+        }
+        pos = check.unwrap();
+        // ensure current position is not beyond vector limits
+        if pos[0] >= characters.len() || pos[1] >= characters[0].len(){
+            return false;
+        }
+        let current = characters[pos[0]][pos[1]];
+        if last == '.'{
+            last = current;
+        } else {
+            if last == 'S' {
+                if current != 'M' {
+                    return false
+                }
+            } else if last == 'M' {
+                if current != 'S' {
+                    return false
+                }
+            }
+            last = '.';
+        }
+        if k == pattern.len()-1{
+            return true
+        }
+    }
+    return false
+}
+// 1784 wrong
+
+fn add(mut coordinate: [usize; 2], offset: [i32;2]) -> Option<[usize; 2]> {
+    let ni = coordinate[0] as i32 + offset[0];
+    let nj = coordinate[1] as i32 + offset[1];
+    if ni < 0 || nj < 0 {
+        return Option::None;
+    } else {
+        coordinate[0] = ni as usize;
+        coordinate[1] = nj as usize;
+    }
+    return Some(coordinate);
 }
