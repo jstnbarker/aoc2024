@@ -19,12 +19,8 @@ fn main() {
             let values: Vec<&str> = current.split("|").collect();
             let l:i32 = values[0].parse().unwrap();
             let r:i32 = values[1].parse().unwrap();
-
-            let mapped = rules.get(&l);
-            if mapped.is_none(){
-                rules.insert(l, Vec::new());
-            }
-
+            
+            rules.get(l);
         }
     }
 
