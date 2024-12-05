@@ -61,7 +61,8 @@ fn find_xword(i:usize, j: usize, characters: Vec<Vec<char>>, pattern: String) ->
 
 fn validate_cross_mas(i: usize, j:usize, characters: Vec<Vec<char>>) -> bool {
     let pattern = [[-1,-1],[1,1],[-1,1],[1,-1],];
-    let mut last = '.';
+    let mut builder: String = "".to_string();
+    let mut occurances: i32 = 0;
     for k in 0..pattern.len(){
         let mut pos = [i,j];
         let check = add(pos, pattern[k]);
@@ -74,23 +75,19 @@ fn validate_cross_mas(i: usize, j:usize, characters: Vec<Vec<char>>) -> bool {
             return false;
         }
         let current = characters[pos[0]][pos[1]];
-        if last == '.'{
-            last = current;
-        } else {
-            if last == 'S' {
-                if current != 'M' {
-                    return false
-                }
-            } else if last == 'M' {
-                if current != 'S' {
-                    return false
-                }
+        builder.push(current);
+        let current_length = builder.len();
+        if current_length == 2{
+            if builder == "MS"{
+                occurances += 1;
+            } else if builder == "SM"{
+                occurances += 1;
             }
-            last = '.';
+            builder = "".to_string();
         }
-        if k == pattern.len()-1{
-            return true
-        }
+    }
+    if occurances == 2 {
+        return true
     }
     return false
 }
