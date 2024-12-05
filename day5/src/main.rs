@@ -13,18 +13,19 @@ fn main() {
     let mut rules: HashMap<i32, Vec<i32>> = HashMap::new();
     loop{
         let current = line_iter.next().unwrap();
-        if current.is_empty(){
-            break;
-        } else {
+        if !current.is_empty(){
             let values: Vec<&str> = current.split("|").collect();
             let l:i32 = values[0].parse().unwrap();
             let r:i32 = values[1].parse().unwrap();
 
-            let mapped = rules.get(&l);
-            if mapped.is_none(){
-                rules.insert(l, Vec::new());
+            let temp = rules.get_mut(&l);
+            if temp.is_some(){
+                temp.unwrap().push(r);
+            } else {
+                rules.insert(l, vec![r]);
             }
-
+        } else {
+            break;
         }
     }
 
@@ -49,25 +50,25 @@ fn main() {
             updates.push(update);
         }
     }
-
     let mut sum = 0;
+    let mut corrected_sum = 0;
     for update in updates{
         if check_update(update.clone(), rules.clone()) {
             sum += update[update.len()/2];
+        } else {
+            corrected_sum += correct_update(update.clone())[update.len()/2];
         }
     }
-    println!("{}", sum);
+    println!("{}\n{}", sum, corrected_sum );
 }
 
-fn check_update(update: Vec<i32>, rules: Vec<[i32; 2]>) -> bool {
+fn check_update(update: Vec<i32>, rules: HashMap<i32, Vec<i32>>) -> bool {
     for page in 0..update.len(){
-        for rule in &rules{
-            // only check applicable rule
-            if rule[0] == update[page]{
-                // then check remainder of list for rule[1]
+        let applicable_rules = rules.get(&update[page]);
+        if applicable_rules.is_some(){
+            for rule in applicable_rules.unwrap(){
                 for other_page in 0..update.len(){
-                    let temp = update[other_page]; 
-                    if rule[1] == temp {
+                    if update[other_page] == *rule{
                         if other_page < page{
                             return false;
                         }
@@ -77,4 +78,8 @@ fn check_update(update: Vec<i32>, rules: Vec<[i32; 2]>) -> bool {
         }
     }
     return true;
+}
+
+fn correct_update(bad_update: Vec<i32>) -> Vec<i32>{
+    return bad_update;
 }
