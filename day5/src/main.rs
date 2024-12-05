@@ -8,8 +8,6 @@ fn main() {
         .expect("File not found");
     let mut line_iter = content.split("\n");
     
-    // load ordering rules 
-    // O(n) runtime 
     let mut rules: HashMap<i32, Vec<i32>> = HashMap::new();
     loop{
         let current = line_iter.next().unwrap();
@@ -29,8 +27,6 @@ fn main() {
         }
     }
 
-    // load updates
-    // O(nm) runtime
     let mut updates: Vec<Vec<i32>> = Vec::new();
     loop{
         let current = line_iter.next().unwrap();
@@ -53,16 +49,16 @@ fn main() {
     let mut sum = 0;
     let mut corrected_sum = 0;
     for update in updates{
-        if check_update(update.clone(), rules.clone()) {
+        if check_update(update.clone(), rules.clone()).is_none() {
             sum += update[update.len()/2];
         } else {
-            corrected_sum += correct_update(update.clone())[update.len()/2];
+            corrected_sum += correct_update(update.clone(),rules.clone())[update.len()/2];
         }
     }
     println!("{}\n{}", sum, corrected_sum );
 }
 
-fn check_update(update: Vec<i32>, rules: HashMap<i32, Vec<i32>>) -> bool {
+fn check_update(update: Vec<i32>, rules: HashMap<i32, Vec<i32>>) -> Option<[usize; 2]>{
     for page in 0..update.len(){
         let applicable_rules = rules.get(&update[page]);
         if applicable_rules.is_some(){
@@ -70,16 +66,23 @@ fn check_update(update: Vec<i32>, rules: HashMap<i32, Vec<i32>>) -> bool {
                 for other_page in 0..update.len(){
                     if update[other_page] == *rule{
                         if other_page < page{
-                            return false;
+                            // return failing indices
+                            return Some([page,other_page]);
                         }
                     }
                 }
             }
         }
     }
-    return true;
+    return None;
 }
 
-fn correct_update(bad_update: Vec<i32>) -> Vec<i32>{
+fn correct_update(mut bad_update: Vec<i32>, rules: HashMap<i32, Vec<i32>>) -> Vec<i32>{
+    let temp = check_update(bad_update.clone(), rules.clone());
+    if temp.is_some(){
+        let temp = temp.unwrap();
+        bad_update.swap(temp[0], temp[1]);
+        return correct_update(bad_update, rules.clone());
+    }
     return bad_update;
 }
