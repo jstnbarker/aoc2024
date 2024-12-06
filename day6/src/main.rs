@@ -32,17 +32,23 @@ impl Guard{
         return self.pos;
     }
 
-    pub fn step(&mut self) -> bool{
+    pub fn future(&mut self) -> [usize; 2] {
         let movement_vector: [[i32; 2]; 4] = [[-1,0],[0,1],[1,0],[0,-1]];
         let ni = movement_vector[self.dir][0] + self.pos[0] as i32;
         let nj = movement_vector[self.dir][1] + self.pos[1] as i32;
 
         if ni < 0 || nj < 0 {
-            return false;
+            return self.pos;
         }
 
-        self.pos[0] = ni as usize;
-        self.pos[1] = nj as usize;
+        return [
+            ni as usize,
+            nj as usize
+        ]
+    }
+    pub fn step(&mut self) -> bool{
+        let future = self.future();
+        self.pos = future;
         return true;
     }
 }
