@@ -2,53 +2,38 @@ use std::fs;
 use std::env;
 
 struct Guard{
-    pos: [usize;2],
-    dir:  usize,
+    pub pos: [usize;2],
+    pub dir:  usize,
+    axis_limit: [usize;2],
+    movement_vector: [[i32; 2]; 4],
 }
 
 impl Guard{
-    pub fn new(pos: [usize;2]) -> Self {
+    pub fn new(pos: [usize;2], axis_limit: [usize;2]) -> Self {
         Guard {
             pos,
+            axis_limit,
             dir: 0,
+            movement_vector: [[-1,0],[0,1],[1,0],[0,-1]],
         }
     }
 
-    pub fn turn(&mut self){
-        self.dir = (self.dir + 1) % 4
+    pub fn turn(&mut self, times: usize){
+        self.dir = (self.dir + times) % 4
     }
 
-    pub fn step_back(&mut self) -> bool{
-        self.dir = (self.dir + 2) % 4;
-        self.step();
-        self.dir = (self.dir + 2) % 4;
-        return true;
-    }
-    pub fn get_dir(&self) -> usize {
-        return self.dir;
-    }
-
-    pub fn get_pos(&self) -> [usize; 2]{
-        return self.pos;
-    }
-
-    pub fn future(&mut self) -> [usize; 2] {
-        let movement_vector: [[i32; 2]; 4] = [[-1,0],[0,1],[1,0],[0,-1]];
-        let ni = movement_vector[self.dir][0] + self.pos[0] as i32;
-        let nj = movement_vector[self.dir][1] + self.pos[1] as i32;
-
-        if ni < 0 || nj < 0 {
-            return self.pos;
-        }
-
-        return [
-            ni as usize,
-            nj as usize
-        ]
-    }
     pub fn step(&mut self) -> bool{
-        let future = self.future();
-        self.pos = future;
+        let ni = self.movement_vector[self.dir][0] + self.pos[0] as i32;
+        let nj = self.movement_vector[self.dir][1] + self.pos[1] as i32;
+
+        if ni < 0 || 
+           ni >= self.axis_limit[0] as i32 ||
+           nj < 0 || 
+           nj >= self.axis_limit[1] as i32 
+        {
+            return false;
+        }
+        self.pos = [ni as usize, nj as usize];
         return true;
     }
 }
@@ -61,46 +46,35 @@ fn main() {
 
     let mut map: Vec<Vec<char>> = Vec::new();
     let mut guard_pos: [usize;2] = [0,0];
+    let mut found: bool = false;
     let content: Vec<&str> = content.split('\n').collect();
-    for line in 0..content.len(){
-        if !content[line].is_empty(){
+    for line in 0..content.len()-1{
+        if !found{
             let depth = content[line].find('^');
             if depth.is_some(){
                 guard_pos = [line,depth.unwrap()];
+                found = true;
             }
-            map.push(content[line].chars().collect());
         }
+        map.push(content[line].chars().collect());
     }
 
-    let mut guard = Guard::new(guard_pos);
-    let crumb = ['^','>','v','<'];
-    let mut unique_tiles = 1;
+    let mut guard = Guard::new(guard_pos, [map.len(),map[0].len()]);
+    let crumbs = ['^','>','v','<'];
+    let mut unique_tiles = 1; // otherwise doesn't count start position
     loop{
-        guard_pos = guard.get_pos();
-        let guard_dir = guard.get_dir();
-        let tile = &mut map[guard_pos[0]][guard_pos[1]];
+        let tile = &mut map[guard.pos[0]][guard.pos[1]];
         if *tile == '#'{
-            guard.step_back();
-            guard.turn();
+            guard.turn(2);
+            guard.step();
+            guard.turn(3);
         } else if *tile == '.'{
-            *tile = crumb[guard_dir];
+            *tile = crumbs[guard.dir];
             unique_tiles += 1;
         }
-        if guard_pos[0] >= map.len() || guard_pos[1] >= map[0].len(){
+        if !guard.step(){
             break;
         }
-        guard.step();
-        print_map(map.clone());
     }
     println!("{}", unique_tiles);
 }
-
-fn print_map(map: Vec<Vec<char>>){
-    for y in map{
-        for x in y {
-            print!("{}", x);
-        }
-        println!();
-    }
-}
-
