@@ -38,22 +38,37 @@ impl fmt::Display for Map {
 }
 
 #[derive(PartialEq)]
+struct Position{
+    pub coord: [usize;2],
+    pub dir: usize
+}
+impl Position{
+    pub fn clone(&self) -> Self{
+        return Position{
+            coord: self.coord.clone(),
+            dir: self.dir.clone()
+        }
+    }
+}
+
+#[derive(PartialEq)]
 struct Guard{
-    pub pos: [usize;2],
-    pub dir:  usize,
+    pos: Position,
+    hist: Vec<Position>,
     axis_limit: [usize;2],
     movement_vector: [[i32; 2]; 4],
     pedometer: usize
+
 }
 
 impl Guard{
     pub fn new(pos: [usize;2], axis_limit: [usize;2]) -> Self {
         Guard {
-            pos,
+            pos: Position{ coord: pos, dir: 0},
             axis_limit,
-            dir: 0,
             movement_vector: [[-1,0],[0,1],[1,0],[0,-1]],
-            pedometer: 0
+            pedometer: 0,
+            hist:  Vec::new()
         }
     }
 
@@ -61,45 +76,53 @@ impl Guard{
         Guard {
             pos: self.pos.clone(),
             axis_limit: self.axis_limit,
-            dir: self.dir.clone(),
             movement_vector: self.movement_vector,
             pedometer: 0,
+            hist: Vec::new()
         }
     }
 
     pub fn turn(&mut self){
-        self.dir = (self.dir + 1) % 4
+        self.pos.dir = (self.pos.dir + 1) % 4
     }
 
     pub fn next(&mut self) -> [usize;2] {
-        let ni = self.movement_vector[self.dir][0] + self.pos[0] as i32;
-        let nj = self.movement_vector[self.dir][1] + self.pos[1] as i32;
+        let ni = self.movement_vector[self.pos.dir][0] + self.pos.coord[0] as i32;
+        let nj = self.movement_vector[self.pos.dir][1] + self.pos.coord[1] as i32;
 
         if ni < 0 || 
            ni >= self.axis_limit[0] as i32 ||
            nj < 0 || 
            nj >= self.axis_limit[1] as i32 
         {
-            return self.pos;
+            return self.pos.coord;
         }
         return [ni as usize, nj as usize];
     }
 
+    pub fn is_loop(self) -> bool{
+        return false;
+    }
+
     pub fn step(&mut self) -> bool{
+        self.hist.push(self.pos.clone());
+
         let temp = self.next();
-        if self.pos == temp{
+        if self.pos.coord == temp{
             return false;
         }
         self.pedometer += 1;
-        self.pos = temp;
+        self.pos.coord = temp;
         return true;
     }
 }
+/*
 impl fmt::Display for Guard{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         return write!(f, "({}, {}): {} ", self.pos[0], self.pos[1], self.dir)
     }
 }
+*/
 
 const STEP_MAX: usize = 10000;
 
