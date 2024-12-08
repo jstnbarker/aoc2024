@@ -97,7 +97,7 @@ impl fmt::Display for Guard{
     }
 }
 
-const STEP_MAX: usize = 5000;
+const STEP_MAX: usize = 10000;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -109,6 +109,9 @@ fn main() {
     let mut found: bool = false;
     let content: Vec<&str> = content.split('\n').collect();
     for line in 0..content.len()-1{
+        if content[line].is_empty(){
+            break;
+        }
         if !found{
             let depth = content[line].find('^');
             if depth.is_some(){
@@ -140,10 +143,14 @@ fn main() {
     /* --- part 2 --- */
     // restart with fresh objects
     let mut map: Map = Map::new(grid.clone());
+    println!("{}", map);
     let mut guard: Guard = Guard::new(guard_pos, map.limits);
     let mut unique_positions = 0;
     loop{
-        if map.get(guard.next()) == '#'{ 
+        /*
+         * turn until not facing a hash
+         */
+        while map.get(guard.next()) == '#'{ 
             guard.turn(1)
         } 
         /*
@@ -151,13 +158,13 @@ fn main() {
          * position already caused a loop earlier in the guard's patrol
          */
         let old = map.get(guard.next());
-        if old != '@'{ 
+        if old != '@' { 
             /*
              * Set tile in front of guard to '?' to indicate potential location for blockage 
              */
             map.set(guard.next(),'?');
-            println!("{}Spawning ghost to check '?'", map);
             let mut ghost: Guard = guard.clone();
+            //println!("{}", map);
             /*
              * turn the ghost because we know the next tile is an obstacle 
              */             
@@ -171,12 +178,26 @@ fn main() {
                     unique_positions += 1;
                     break;
                 }
-                let next = map.get(ghost.next());
-                if next == '#' || next == '?' {
+                /*
+                 * while ghost is facing a '#' or '?', turn.
+                 */
+                let mut turn_counter=0;
+                let mut spinna = false;
+                while (map.get(ghost.next()) == '#') || (map.get(ghost.next())== '?')  {
+                    turn_counter += 1;
                     ghost.turn(1);
+                    if ghost == guard || turn_counter >= 8{
+                        spinna = true;
+                        map.set(guard.next(), '@');
+                        unique_positions += 1;
+                        break;
+                    }
                 } 
+                if spinna{
+                    break;
+                }
                 /* 
-                 * if the ghost doesn't step (left map boundary), reset obstacle location to it's
+                 * if the ghost doesn't step (left map boundary), reset obstacle tile to it's
                  * original value 
                  */
                 if !ghost.step(){
@@ -184,8 +205,7 @@ fn main() {
                     break;
                 }
             }
-        } else {
-            println!("{}", map);
+            //println!("{}", map);
         }
         /*
          * if the guard doesn't step, it left the map boundary
@@ -203,6 +223,8 @@ fn main() {
 1614 too low
 1706 wrong
 1746 wrong
+1758 wrong; figured my ghost might get cornered 
+tryin' 1759 after an adjustment  **WRONG**
 1808 too high
 1824
 1827
