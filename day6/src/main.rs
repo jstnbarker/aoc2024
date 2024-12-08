@@ -43,6 +43,7 @@ struct Guard{
     pub dir:  usize,
     axis_limit: [usize;2],
     movement_vector: [[i32; 2]; 4],
+    pedometer: usize
 }
 
 impl Guard{
@@ -52,6 +53,7 @@ impl Guard{
             axis_limit,
             dir: 0,
             movement_vector: [[-1,0],[0,1],[1,0],[0,-1]],
+            pedometer: 0
         }
     }
 
@@ -60,12 +62,13 @@ impl Guard{
             pos: self.pos.clone(),
             axis_limit: self.axis_limit,
             dir: self.dir.clone(),
-            movement_vector: self.movement_vector
+            movement_vector: self.movement_vector,
+            pedometer: 0,
         }
     }
 
-    pub fn turn(&mut self, times: usize){
-        self.dir = (self.dir + times) % 4
+    pub fn turn(&mut self){
+        self.dir = (self.dir + 1) % 4
     }
 
     pub fn next(&mut self) -> [usize;2] {
@@ -87,6 +90,7 @@ impl Guard{
         if self.pos == temp{
             return false;
         }
+        self.pedometer += 1;
         self.pos = temp;
         return true;
     }
@@ -128,7 +132,7 @@ fn main() {
     let mut unique_tiles = 1; // otherwise doesn't count start positio  
     loop{
         if map.get(guard.next()) == '#'{ 
-            guard.turn(1)
+            guard.turn()
         } 
         if map.get(guard.pos) == '.'{
             map.set(guard.pos, 'x');
@@ -147,75 +151,53 @@ fn main() {
     let mut guard: Guard = Guard::new(guard_pos, map.limits);
     let mut unique_positions = 0;
     loop{
-        /*
-         * turn until not facing a hash
-         */
-        while map.get(guard.next()) == '#'{ 
-            guard.turn(1)
-        } 
-        /*
-         * Because we want unique positions to get the guard stuck in a loop we must check if this
-         * position already caused a loop earlier in the guard's patrol
-         */
-        let old = map.get(guard.next());
-        if old != '@' { 
-            /*
-             * Set tile in front of guard to '?' to indicate potential location for blockage 
-             */
-            map.set(guard.next(),'?');
-            let mut ghost: Guard = guard.clone();
-            //println!("{}", map);
-            /*
-             * turn the ghost because we know the next tile is an obstacle 
-             */             
-            ghost.turn(1);
-            for i in 0..STEP_MAX{
-                if ghost == guard || i == STEP_MAX-1{
-                    /* 
-                     * Replace '?' with '@' to confirm obstacle location causes a loop 
-                     */
-                    map.set(guard.next(), '@'); 
-                    unique_positions += 1;
-                    break;
-                }
-                /*
-                 * while ghost is facing a '#' or '?', turn.
-                 */
-                let mut turn_counter=0;
-                let mut spinna = false;
-                while (map.get(ghost.next()) == '#') || (map.get(ghost.next())== '?')  {
+        while map.get(guard.next()) == '#'{
+            guard.turn();
+        }
+        let tile = map.get(guard.next()).clone();
+        if tile == '.'{
+            map.set(guard.next(), '#');
+            let mut ghost = guard.clone();
+            let mut looping:bool=false;
+            loop {
+                /* try to turn ghost until not blocked  */
+                let mut turn_counter = 0;
+                while map.get(ghost.next()) == '#' {
                     turn_counter += 1;
-                    ghost.turn(1);
-                    if ghost == guard || turn_counter >= 8{
-                        spinna = true;
-                        map.set(guard.next(), '@');
-                        unique_positions += 1;
+                    if turn_counter > 4{
+                        looping = true;
                         break;
                     }
-                } 
-                if spinna{
+                    ghost.turn();
+                }
+                if looping {
                     break;
                 }
-                /* 
-                 * if the ghost doesn't step (left map boundary), reset obstacle tile to it's
-                 * original value 
-                 */
+
+                if ghost == guard || ghost.pedometer > STEP_MAX {
+                    map.set(guard.next(), '&');
+                    break;
+                }
+
                 if !ghost.step(){
-                    map.set(guard.next(), old);
+                    map.set(guard.next(), tile);
                     break;
                 }
+
             }
-            //println!("{}", map);
         }
-        /*
-         * if the guard doesn't step, it left the map boundary
-         */
         if !guard.step(){
             break;
         }
     }
-
-        /* ok ghost is done */
+    // count '&' blockages
+    for i in map.map{
+        for j in i{
+            if j == '&' {
+                unique_positions += 1;
+            }
+        }
+    }
     println!("Part 2: {}",unique_positions);
 }
 /*
