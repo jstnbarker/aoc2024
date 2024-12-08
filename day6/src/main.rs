@@ -91,13 +91,20 @@ impl Guard{
         return true;
     }
 }
+impl fmt::Display for Guard{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        return write!(f, "({}, {}): {} ", self.pos[0], self.pos[1], self.dir)
+    }
+}
+
+const STEP_MAX: usize = 5000;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let content = fs::read_to_string(args[1].clone())
         .expect("Could not read da file");
 
-    let mut map: Vec<Vec<char>> = Vec::new();
+    let mut grid: Vec<Vec<char>> = Vec::new();
     let mut guard_pos: [usize;2] = [0,0];
     let mut found: bool = false;
     let content: Vec<&str> = content.split('\n').collect();
@@ -109,63 +116,97 @@ fn main() {
                 found = true;
             }
         }
-        map.push(content[line].chars().collect());
+        grid.push(content[line].chars().collect());
     }
     
-    let mut map: Map = Map::new(map);
+    /* --- part 1 --- */
+    let mut map: Map = Map::new(grid.clone());
     let mut guard = Guard::new(guard_pos, map.limits);
     let mut unique_tiles = 1; // otherwise doesn't count start positio  
-    let mut loops = 0;
     loop{
         if map.get(guard.next()) == '#'{ 
             guard.turn(1)
-        } else {
-            let tile = map.get(guard.pos);
-            if tile == '.'{
-                map.set(guard.pos, 'x');
-                unique_tiles += 1;
-            } 
-            println!("{}", map);
-
-            let mut future = guard.clone();
-            if guard.next() != guard.pos{
-                let orig = map.get(guard.next()); // save next tile's value
-                map.set(guard.next(),'#');        // set next tile to '#'
-                println!("{}", map);              
-                future.turn(1);                   // turn ghost away from '#'
-                let max_steps = 10000;
-                for i in 0..max_steps{
-                    let future_tile = map.get(future.next());
-                    if future_tile == '#'{
-                        future.turn(1);
-                    } else if future == guard || i == max_steps-1 {
-                        loops += 1;
-                        break;
-                    }
-                    if !future.step(){
-                        break;
-                    }
-                }
-                map.set(guard.next(),orig);      // reset next tile to original value
-            } else {
-                break;
-            }
-            guard.step();
+        } 
+        if map.get(guard.pos) == '.'{
+            map.set(guard.pos, 'x');
+            unique_tiles += 1;
         }
-
+        if !guard.step(){
+            break;
+        }
     }
-    println!("{}\n{}",unique_tiles,loops);
+    println!("Part 1: {}",unique_tiles);
+
+    /* --- part 2 --- */
+    // restart with fresh objects
+    let mut map: Map = Map::new(grid.clone());
+    let mut guard: Guard = Guard::new(guard_pos, map.limits);
+    let mut unique_positions = 0;
+    loop{
+        if map.get(guard.next()) == '#'{ 
+            guard.turn(1)
+        } 
+        /*
+         * Because we want unique positions to get the guard stuck in a loop we must check if this
+         * position already caused a loop earlier in the guard's patrol
+         */
+        let old = map.get(guard.next());
+        if old != '@'{ 
+            /*
+             * Set tile in front of guard to '?' to indicate potential location for blockage 
+             */
+            map.set(guard.next(),'?');
+            println!("{}Spawning ghost to check '?'", map);
+            let mut ghost: Guard = guard.clone();
+            /*
+             * turn the ghost because we know the next tile is an obstacle 
+             */             
+            ghost.turn(1);
+            for i in 0..STEP_MAX{
+                if ghost == guard || i == STEP_MAX-1{
+                    /* 
+                     * Replace '?' with '@' to confirm obstacle location causes a loop 
+                     */
+                    map.set(guard.next(), '@'); 
+                    unique_positions += 1;
+                    break;
+                }
+                let next = map.get(ghost.next());
+                if next == '#' || next == '?' {
+                    ghost.turn(1);
+                } 
+                /* 
+                 * if the ghost doesn't step (left map boundary), reset obstacle location to it's
+                 * original value 
+                 */
+                if !ghost.step(){
+                    map.set(guard.next(), old);
+                    break;
+                }
+            }
+        } else {
+            println!("{}", map);
+        }
+        /*
+         * if the guard doesn't step, it left the map boundary
+         */
+        if !guard.step(){
+            break;
+        }
+    }
+
+        /* ok ghost is done */
+    println!("Part 2: {}",unique_positions);
 }
 /*
-// 1614 too low
-// 1706 wrong
-// 1808 too high
-// 1853 too high
-// (untested) 1862 too high
-//
-// 10,000,000 1708
-//  1,000,000 1676
-//    100,000 1707
-//     10,000 1706
-//      1,000 2569
+1589
+1614 too low
+1706 wrong
+1746 wrong
+1808 too high
+1824
+1827
+1848
+1853 too high
+(untested) 1862 too high
 */
