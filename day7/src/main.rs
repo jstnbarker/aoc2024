@@ -32,22 +32,37 @@ fn load(path: String) -> Vec<Expr> {
     return expressions;
 }
 
+fn concat(a:u64, b:u64) -> u64 {
+    let result = (a.to_string() + &b.to_string()).parse().expect("big fuckin' number");
+    //println!("{}", result);
+    return result;
+}
+
 fn solve(current:u64, target: u64, mut terms: Vec<u64>) -> u64{
     let val = terms.pop().unwrap();
     let a = current * val;
     let b = current + val;
+    let c = concat(current,val);
     if terms.is_empty(){
         if a == target{
             return a;
-        } else if b == target{
+        } 
+        else if b == target{
             return b;
+        } 
+        else if c == target{
+            return c;
         }
-    } else {
-        if solve(a,target,terms.clone()) == target{
-            return target;
-        } else {
-            return solve(b,target,terms.clone());
-        }
+        return 0;
+    } 
+    if solve(a,target,terms.clone()) == target{
+        return target;
+    } 
+    else if solve(b,target,terms.clone()) == target {
+        return target;
+    } 
+    else if solve(c,target,terms.clone()) == target{
+        return solve(c,target,terms.clone());
     }
     return 0;
 }
