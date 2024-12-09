@@ -108,7 +108,7 @@ impl fmt::Display for Guard{
     }
 }
 
-const STEP_MAX: usize = 10000;
+const STEP_MAX: usize = 5000;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -137,6 +137,7 @@ fn main() {
     let mut map: Map = Map::new(grid.clone());
     let mut guard = Guard::new(guard_pos, map.limits);
     let mut unique_tiles = 1; // otherwise doesn't count start positio  
+    let mut unique_positions = 0;
     loop{
         if map.get(guard.next()) == '#'{ 
             guard.turn()
@@ -144,6 +145,39 @@ fn main() {
         if map.get(guard.pos) == '.'{
             map.set(guard.pos, 'x');
             unique_tiles += 1;
+        }
+        let tile = map.get(guard.next()).clone();
+        if tile == '.'{
+            map.set(guard.next(), '#');
+            let mut ghost = guard.clone();
+            ghost.turn();
+            loop {
+                // there are  no washing machines in main input
+                while map.get(ghost.next()) == '#' {
+                    ghost.turn();
+                }
+                /*
+                let g_temp = map.get(ghost.pos);
+                let temp = map.get(guard.pos);
+                map.set(ghost.pos, 'G');
+                map.set(guard.pos, '$');
+                println!("{}\n{}", map,ghost.pedometer);
+                map.set(ghost.pos, g_temp);
+                map.set(guard.pos, temp);
+                */
+                
+                if !ghost.step(){
+                    map.set(guard.next(), tile);
+                    break;
+                }
+
+                if  ghost == guard || ghost.pedometer > STEP_MAX {
+                    map.set(guard.next(), '&');
+                    break;
+                }
+
+
+            }
         }
         if !guard.step(){
             break;
@@ -153,47 +187,6 @@ fn main() {
 
     /* --- part 2 --- */
     // restart with fresh objects
-    let mut map: Map = Map::new(grid.clone());
-    println!("{}", map);
-    let mut guard: Guard = Guard::new(guard_pos, map.limits);
-    let mut unique_positions = 0;
-    loop{
-        while map.get(guard.next()) == '#'{
-            guard.turn();
-        }
-        let tile = map.get(guard.next()).clone();
-        if tile == '.'{
-            map.set(guard.next(), '#');
-            let mut ghost = guard.clone();
-            loop {
-                /* try to turn ghost until not blocked  */
-                let mut turn_counter = 0;
-                let mut washing_machine: bool=false;
-                while map.get(ghost.next()) == '#' {
-                    turn_counter += 1;
-                    if turn_counter > 4{
-                        washing_machine = true;
-                        break;
-                    }
-                    ghost.turn();
-                }
-                if  washing_machine || ghost == guard || ghost.pedometer > STEP_MAX {
-                    map.set(guard.next(), '&');
-                    break;
-                }
-
-                if !ghost.step(){
-                    map.set(guard.next(), tile);
-                    break;
-                }
-
-            }
-        }
-        if !guard.step(){
-            break;
-        }
-    }
-    // count '&' blockages
     for i in map.map{
         for j in i{
             if j == '&' {
