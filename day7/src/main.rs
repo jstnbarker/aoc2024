@@ -26,25 +26,30 @@ fn load(path: String) -> Vec<Expr> {
                     .expect("Term did not parse"));
             }
         }
+        terms.reverse();
         expressions.push(Expr{result, terms})
     }
     return expressions;
 }
 
-fn solve(mut terms: Vec<u64>) -> [u64;2]{
-    if terms.len() == 1 {
-        let temp = terms.pop().expect("wait i htought there was one left");
-        return [temp, temp]
+fn solve(current:u64, target: u64, mut terms: Vec<u64>) -> u64{
+    let val = terms.pop().unwrap();
+    let a = current * val;
+    let b = current + val;
+    if terms.is_empty(){
+        if a == target{
+            return a;
+        } else if b == target{
+            return b;
+        }
+    } else {
+        if solve(a,target,terms.clone()) == target{
+            return target;
+        } else {
+            return solve(b,target,terms.clone());
+        }
     }
-    /*
-    for value in terms.clone() {
-        print!("{} ", value);
-    }
-    println!();
-    */
-    let val = terms.pop().expect("aw shit i ran out of values");
-    let result = solve(terms.clone());
-    return [result[0]*val,result[1]+val];
+    return 0;
 }
 
 fn main() {
@@ -52,11 +57,9 @@ fn main() {
     let expr = load(args[1].clone());
 
     let mut sum: u64 = 0;
-    for x in expr{
-        for val in solve(x.terms.clone()){
-            if val == x.result {
-                sum += x.result;
-            }
+    for mut x in expr{
+        if solve(x.terms.pop().unwrap(), x.result, x.terms) == x.result{
+            sum += x.result;
         }
     }
     println!("{}", sum);
