@@ -37,13 +37,20 @@ impl fmt::Display for Map {
     }
 }
 
-#[derive(PartialEq)]
 struct Guard{
     pub pos: [usize;2],
     pub dir:  usize,
     axis_limit: [usize;2],
     movement_vector: [[i32; 2]; 4],
     pedometer: usize
+}
+
+impl PartialEq for Guard{
+    fn eq(&self, other: &Self) -> bool {
+        let a = self.dir == other.dir;
+        let b = self.pos == other.pos;
+        return a&b;
+    }
 }
 
 impl Guard{
@@ -158,23 +165,19 @@ fn main() {
         if tile == '.'{
             map.set(guard.next(), '#');
             let mut ghost = guard.clone();
-            let mut looping:bool=false;
             loop {
                 /* try to turn ghost until not blocked  */
                 let mut turn_counter = 0;
+                let mut washing_machine: bool=false;
                 while map.get(ghost.next()) == '#' {
                     turn_counter += 1;
                     if turn_counter > 4{
-                        looping = true;
+                        washing_machine = true;
                         break;
                     }
                     ghost.turn();
                 }
-                if looping {
-                    break;
-                }
-
-                if ghost == guard || ghost.pedometer > STEP_MAX {
+                if  washing_machine || ghost == guard || ghost.pedometer > STEP_MAX {
                     map.set(guard.next(), '&');
                     break;
                 }
