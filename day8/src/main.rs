@@ -1,10 +1,6 @@
 use std::env;
 use std::fs;
 use std::collections::HashMap;
-// must know limits of map
-// must know position and frequency of each tower
-
-
 /* 
  * Return a tuple containing the map limits and a HashMap of tower locations keyed by the
  * tower's frequency
@@ -36,16 +32,52 @@ fn load(path: String) -> ([i32;2], HashMap<char, Vec<[i32;2]>>){
         }
 
     }
-    return ([i-1,j_max-1], out)
+    return ([i-1,j_max], out)
 }
 
 fn calculate_antinode(a: [i32;2], b: [i32;2], lim:[i32;2]) -> Option<[i32;2]> {
     let i = a[0] + (a[0] - b[0]);
     let j = a[1] + (a[1] - b[1]);
-    if j < 0 || i < 0 || i > lim[0] || j > lim[1] {
-            return None
+    if within_limit([i,j],lim){
+        return Some([i,j]);
     }
-    return Some([i,j]);
+    return None
+}
+
+fn within_limit(a:[i32;2],lim:[i32;2]) -> bool {
+    if a[0] < 0 || a[1] < 0 || a[0] >= lim[0] || a[1] >= lim[1] {
+        return false;
+    }
+    return true;
+}
+
+fn get_antinodes(a:[i32;2],b: [i32;2],lim:[i32;2]) -> Vec<[i32;2]> {
+    let mut out: Vec<[i32;2]> = Vec::new();
+
+    let i_offset = a[0] - b[0];
+    let j_offset = a[1] - b[1];
+    if i_offset == 0 && j_offset == 0{
+        return out
+    }
+
+    let mut temp = a.clone();
+    loop{
+        temp = [temp[0]+i_offset, temp[1]+j_offset];
+        if within_limit(temp,lim){
+            out.push(temp)
+        } else {
+            break;
+        }
+    }
+    loop{
+        temp = [temp[0]-i_offset, temp[1]-j_offset];
+        if within_limit(temp,lim){
+            out.push(temp);
+        } else {
+            break;
+        }
+    }
+    return out;
 }
 
 struct Map{
@@ -54,9 +86,9 @@ struct Map{
 impl Map{
     fn new(lim:[i32;2]) -> Self {
         let mut occupied: Vec<Vec<bool>> = Vec::new();
-        for _ in 0..(lim[0]+1){
+        for _ in 0..lim[0]{
             let mut temp: Vec<bool> = Vec::new();
-            for _ in 0..(lim[1]+1){
+            for _ in 0..lim[1]{
                 temp.push(false);
             }
             occupied.push(temp);
@@ -70,51 +102,58 @@ impl Map{
         return self.occupied[coord[0] as usize][coord[1] as usize];
     }
 
-    pub fn toggle(&mut self, coord: [i32;2]) {
-        let state = &mut self.occupied[coord[0] as usize][coord[1] as usize];
-        *state = !*state;
-
-    }
     pub fn occupy(&mut self, coord: [i32;2]) {
         self.occupied[coord[0] as usize][coord[1] as usize] = true;
     }
-}
 
-// 269 too low
-// 278 too high
+    fn get_occupied(&self) -> i32 {
+        let mut total = 0;
+        for i in 0..self.occupied.len(){
+            for j in 0..self.occupied[i].len(){
+                if self.get([i as i32,j as i32]){
+                    total+=1;
+                }
+            }
+        }
+        return total;
+    }
+}
+//part 2 971 too low
+//part 2 972 too low
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let (limits, towers) = load(args[1].clone());
-    let mut m: Map = Map::new(limits);
-    let mut total = 0;
+    let mut p1: Map = Map::new(limits);
+    let mut p2: Map = Map::new(limits);
     for freq in towers.keys(){
         let tower_list = towers.get(freq).unwrap();
-        // do math
+
+        /* PART 1 */
         for i in 0..tower_list.len()-1{
             for j in i+1..tower_list.len(){
                 let a = tower_list[i];
                 let b = tower_list[j];
                 let antinode = calculate_antinode(a, b, limits);
                 if antinode.is_some(){
-                    let antinode = antinode.unwrap();
-                    m.occupy(antinode);
+                    p1.occupy(antinode.unwrap());
                 }
                 let antinode = calculate_antinode(b, a, limits);
                 if antinode.is_some(){
-                    let antinode = antinode.unwrap();
-                    m.occupy(antinode);
+                    p1.occupy(antinode.unwrap());
+                }
+            }
+        }
+
+        /* PART 2 */
+        for i in 0..tower_list.len()-1{
+            for j in i..tower_list.len(){
+                for coord in get_antinodes(tower_list[i],tower_list[j],limits){
+                    p2.occupy(coord)
                 }
             }
         }
     }
-
-    for vec in m.occupied{
-        for boolean in vec{
-            if boolean {
-                total+=1;
-            }
-        }
-    }
-    println!("{}", total);
+    println!("{}", p1.get_occupied());
+    println!("{}", p2.get_occupied());
 }
