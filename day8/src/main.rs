@@ -54,9 +54,9 @@ struct Map{
 impl Map{
     fn new(lim:[i32;2]) -> Self {
         let mut occupied: Vec<Vec<bool>> = Vec::new();
-        for _ in 0..(lim[0]+3){
+        for _ in 0..(lim[0]+1){
             let mut temp: Vec<bool> = Vec::new();
-            for _ in 0..(lim[1]+3){
+            for _ in 0..(lim[1]+1){
                 temp.push(false);
             }
             occupied.push(temp);
@@ -77,7 +77,6 @@ impl Map{
     }
     pub fn occupy(&mut self, coord: [i32;2]) {
         self.occupied[coord[0] as usize][coord[1] as usize] = true;
-
     }
 }
 
@@ -99,16 +98,12 @@ fn main() {
                 let antinode = calculate_antinode(a, b, limits);
                 if antinode.is_some(){
                     let antinode = antinode.unwrap();
-                    if !m.get(antinode){
-                        m.occupy(antinode);
-                    }
+                    m.occupy(antinode);
                 }
                 let antinode = calculate_antinode(b, a, limits);
                 if antinode.is_some(){
                     let antinode = antinode.unwrap();
-                    if !m.get(antinode){
-                        m.occupy(antinode);
-                    }
+                    m.occupy(antinode);
                 }
             }
         }
