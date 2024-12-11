@@ -25,6 +25,7 @@ fn load(path: String) -> Vec<Vec<u32>> {
 }
 
 struct PathFinder{
+    original: Vec<Vec<u32>>,
     topo: Vec<Vec<u32>>,
     lim: [usize;2],
     offsets: [[i32;2];4],
@@ -34,6 +35,7 @@ impl PathFinder{
     fn new(topo: Vec<Vec<u32>>) -> Self {
         return PathFinder{
             lim: [topo.len(),topo[0].len()],
+            original: topo.clone(),
             topo,
             offsets: [[1,0],[0,-1],[-1,0],[0,1]]
         }
@@ -48,12 +50,17 @@ impl PathFinder{
         return Some([i as usize, j as usize]);
     }
 
+    fn reset(&mut self){
+        self.topo = self.original.clone();
+    }
+
     fn solve(&mut self) -> i32 {
         let mut sum_of_scores = 0;
         for i in 0..self.lim[0]{
             for j in 0..self.lim[1]{
                 if self.topo[i][j] == 0 {
                     sum_of_scores += self.find_trail([i,j]);
+                    self.reset();
                 }
             }
         }
@@ -69,7 +76,7 @@ impl PathFinder{
     
     fn find_trail(&mut self, coord:[usize;2]) -> i32 {
         if self.at(coord) == 9{
-            //self.set(coord, 9);
+            self.set(coord, 8);
             return 1;
         }
         let mut sum = 0;
