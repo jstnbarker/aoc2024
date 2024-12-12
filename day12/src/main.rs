@@ -43,6 +43,20 @@ struct Plot{
         self.plot[coord[0]][coord[1]]
     }
 
+    // paint bucket fill
+    fn fill(&mut self, coord:[usize;2],val:char){
+        self.set(coord, val);
+        for dir in self.directions{
+            match self.step(coord, dir){
+                Some(neighbor) => {
+                    if '.' == self.get(neighbor){
+                        self.fill(neighbor, val);
+                    }
+                }
+                None => {}
+            }
+        }
+    }
     // return perimeter, area
     fn analyze(&mut self, coord: [usize;2]) -> (u32, u32){
         let original = self.get(coord);
@@ -60,7 +74,7 @@ struct Plot{
             match self.step(coord, dir){
                 Some(neighbor) => {
                     let nval = self.get(neighbor);
-                    if nval != original && nval.is_alphabetic() {
+                    if nval != original && nval != '.' {
                         perimeter += 1;
                     } else if nval == original {
                         // step to next neighbor if neighbor is same char as current
@@ -74,6 +88,7 @@ struct Plot{
                 }
             }
         }
+        // mark with # to indicate region's perimeter and area has already been calculated
         (perimeter, area)
     }
 }
@@ -101,8 +116,10 @@ fn main() {
             let coord = [lat,lon];
             if plot.get(coord).is_alphabetic(){
                 let (perim, area) = plot.analyze(coord);
-                sum += perim * area;
-                println!("{}", plot);
+                let region_cost = perim * area;
+                sum += region_cost;
+                println!("{}Region Cost: {}*{}={}\n", plot, perim, area, region_cost);
+                plot.fill(coord,'#');
             }
         }
     }
