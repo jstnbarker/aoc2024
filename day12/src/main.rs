@@ -10,17 +10,29 @@ fn load(path: String) -> Vec<Vec<char>> {
     return out;
 }
 
+use std::fmt;
 struct Plot{
-    plot: Vec<Vec<char>>
+    plot: Vec<Vec<char>>,
+    directions: [[i32;2];4],
+    limit: [i32;2],
 } impl Plot {
-    fn new() -> Self {
+    fn new(plot: Vec<Vec<char>>) -> Self {
         Plot {
-            plot:
+            limit: [plot.len() as i32, plot[0].len() as i32],
+            plot,
+            directions: [[1,0],[0,1],[-1,0],[0,-1]],
         }
     }
     
-    fn move(&self, dir:[usize;2]) -> Option<[usize;2]> {
-        return Some(dir);
+    // return None if out of bounds, otherwise return Some coord after applying step direction
+    fn step(&self, coord: [usize;2], dir:[i32;2]) -> Option<[usize;2]> {
+        let new_lat = dir[0] + coord[0] as i32;
+        let new_lon = dir[1] + coord[1] as i32;
+        if new_lat >= self.limit[0] || new_lat < 0 || 
+           new_lon >= self.limit[1] || new_lon < 0 {
+            return None;
+        }
+        return Some([new_lat as usize, new_lon as usize])
     }
 
     fn set(&mut self, coord: [usize;2], val: char){
@@ -32,31 +44,67 @@ struct Plot{
     }
 
     // return perimeter, area
-    fn analyze(coord: [usize;2]) -> (u32, u32){
+    fn analyze(&mut self, coord: [usize;2]) -> (u32, u32){
+        let original = self.get(coord);
+
         // mark pos as visited
+        self.set(coord, '.');
 
         // add one to area every step
+        let mut area = 1;
+        let mut perimeter = 0;
 
         // check neighbors, add one to perimeter if neighbor is alphabetic and not the same char val as current
         // location
-
-        // step to next neighbor if neighbor is same char as current
-        
-        // change visited mark to diff char
-        return (0,0)
+        for dir in self.directions{
+            match self.step(coord, dir){
+                Some(neighbor) => {
+                    let nval = self.get(neighbor);
+                    if nval != original && nval.is_alphabetic() {
+                        perimeter += 1;
+                    } else if nval == original {
+                        // step to next neighbor if neighbor is same char as current
+                        let (p, a) = self.analyze(neighbor);
+                        perimeter += p;
+                        area += a;
+                    }
+                }
+                None => {
+                    perimeter += 1;
+                }
+            }
+        }
+        (perimeter, area)
     }
-
+}
+impl fmt::Display for Plot{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut out = "".to_string();
+        for lat in self.plot.clone(){
+            for char in lat {
+                out.push(char);
+            }
+            out.push('\n');
+        }
+        write!(f, "{}", out)
+    }
 }
 
 use std::env::args;
 fn main() {
     let args: Vec<String> = args().collect();
-    let mut map = load(args[1].clone());
+    let mut plot = Plot::new(load(args[1].clone()));
 
-    for lat in 0..map.len(){
-        for lon in 0..map[lat].len(){
-            if map[lat][lon].is_alphabetic(){
+    let mut sum: u32 = 0;
+    for lat in 0..plot.plot.len(){
+        for lon in 0..plot.plot[0].len(){
+            let coord = [lat,lon];
+            if plot.get(coord).is_alphabetic(){
+                let (perim, area) = plot.analyze(coord);
+                sum += perim * area;
+                println!("{}", plot);
             }
         }
     }
+    println!("Fence cost: {}", sum);
 }
