@@ -42,6 +42,7 @@ struct Stonehenge{
 
 impl Stonehenge{
     fn new(stone_string: String) -> Self {
+        // use stone's val as hash to hashmap, and store whole stone at hashed val
         let mut stones: HashMap<u64, Stone> = HashMap::new();
         let mut iter = stone_string.chars();
         let mut _builder = "".to_string();
@@ -67,7 +68,6 @@ impl Stonehenge{
         }
     }
 
-
     fn blink(&mut self){
         let mut post_blink: HashMap<u64,Stone> = HashMap::new();
 
@@ -75,35 +75,45 @@ impl Stonehenge{
         loop{
             match stone_iter.next() {
                 Some(stone) => {
-                    // split the stone
+                    // apply rules to current stone
                     match stone.split(){ 
                         Some(split) => {
-                            // if split is successful, increment existing key-pair, otherwise add
-                            // new one
+                            // if a sister stone is returned from stone:
                             match post_blink.get_mut(&split.val){
+                                // increment the preexisting stone's quantity value
                                 Some(stone) => {
                                     stone.quantity+=split.quantity;
                                 }
+                                // add a new key value pair for the sister to the map
                                 None => {
                                     post_blink.insert(split.val, split);
                                 }
                             }
                         }
-                        // do nothing if there is no resulting stone from the split
+                        // do nothing if the call to split doesn't return a sister stone 
+                        // as the stone that called to be split has modified itself according to
+                        // the rules
                         None => {}
                     }
-                    // check if stone id's key has a value
+                    // because stone.split modifies the calling stone directly, optionally
+                    // returning a new stone (see above), we gotta add the (now modified) 
+                    // stone's values to the new map
+                    //
+                    // i should probably make this a function rather than repeating myself 
+                    // but the post_blink map would be out of that function's scope unless 
+                    // i add a new value to the struct 
                     match post_blink.get_mut(&stone.val){
                         Some(value) => {
                             value.quantity+=stone.quantity;
                         }
                         None => {
+                            // cloning as a workaround to the lsp and compiler complaints
                             let copy = stone.clone();
                             post_blink.insert(stone.val, copy);
-                            // idk why the lsp was complaining until I cloned the stone 
                         }
                     }
                 }
+                // break out of loop when the iterator runs out of stones to split
                 None => {
                     break;
                 }
