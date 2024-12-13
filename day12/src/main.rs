@@ -55,7 +55,7 @@ struct Plot{
             match self.step(coord, directions[i]){
                 Some(neighbor) => {
                     let nval = self.get(neighbor);
-                    neighbors[i] = nval == target || nval == '.';
+                    neighbors[i] = nval == target || nval == target.to_ascii_lowercase();
                 }
                 None => {}
             }
@@ -107,7 +107,8 @@ struct Plot{
         let mut corners = self.count_corners(coord);
 
         // mark pos as visited
-        self.set(coord, '.');
+        let lower = original.to_ascii_lowercase();
+        self.set(coord, lower);
 
         // check neighbors, add one to perimeter if neighbor is alphabetic and not the same char val as current
         // location
@@ -115,7 +116,7 @@ struct Plot{
             match self.step(coord, dir){
                 Some(neighbor) => {
                     let nval = self.get(neighbor);
-                    if nval != original && nval != '.' {
+                    if nval != original && nval != lower {
                         perimeter += 1;
                     } else if nval == original {
                         // step to next neighbor if neighbor is same char as current
@@ -130,7 +131,6 @@ struct Plot{
                 }
             }
         }
-        // mark with # to indicate region's perimeter and area has already been calculated
         (perimeter, area, corners)
     }
 }
@@ -157,12 +157,13 @@ fn main() {
     for lat in 0..plot.plot.len(){
         for lon in 0..plot.plot[0].len(){
             let coord = [lat,lon];
-            if plot.get(coord).is_alphabetic(){
+            if plot.get(coord).is_uppercase(){
                 let (perim, area, corners) = plot.analyze(coord);
                 let region_cost = perim * area;
                 sum += region_cost;
                 p2sum += area*corners;
-                plot.fill(coord,'#');
+                //plot.fill(coord,'#');
+                //println!("{}", plot);
             }
         }
     }
