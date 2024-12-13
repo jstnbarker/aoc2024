@@ -43,6 +43,46 @@ struct Plot{
         self.plot[coord[0]][coord[1]]
     }
 
+    // circle clockwise 
+    // false, true/false, false == outside corner
+    // true, false, true == inside corner
+    fn count_corners(&mut self, coord:[usize;2]) -> u32 {
+        let mut corners = 0;
+        let mut neighbors: [bool;8] = [false;8];
+        let directions = [[-1,0],[-1,1],[0,1],[1,1],[1,0],[1,-1],[0,-1],[-1,-1]];
+        let target = self.get(coord);
+        for i in 0..directions.len(){
+            match self.step(coord, directions[i]){
+                Some(neighbor) => {
+                    let nval = self.get(neighbor);
+                    neighbors[i] = nval == target || nval == '.';
+                }
+                None => {}
+            }
+        }
+
+        let mut start = 0;
+        for _ in 0..4{
+            let a = neighbors[start];
+            let b = neighbors[start+1];
+            let c = neighbors[(start+2)%8];
+
+            if a {
+                if !c {
+                    if b {
+                        corners+=1
+                    }
+                }
+            } else {
+                if !c{
+                    corners+=1;
+                }
+            }
+            start += 2;
+        }
+        return corners;
+    }
+
     // paint bucket fill
     fn fill(&mut self, coord:[usize;2],val:char){
         self.set(coord, val);
@@ -58,15 +98,16 @@ struct Plot{
         }
     }
     // return perimeter, area
-    fn analyze(&mut self, coord: [usize;2]) -> (u32, u32){
+    fn analyze(&mut self, coord: [usize;2]) -> (u32, u32, u32){
         let original = self.get(coord);
-
-        // mark pos as visited
-        self.set(coord, '.');
 
         // add one to area every step
         let mut area = 1;
         let mut perimeter = 0;
+        let mut corners = self.count_corners(coord);
+
+        // mark pos as visited
+        self.set(coord, '.');
 
         // check neighbors, add one to perimeter if neighbor is alphabetic and not the same char val as current
         // location
@@ -78,9 +119,10 @@ struct Plot{
                         perimeter += 1;
                     } else if nval == original {
                         // step to next neighbor if neighbor is same char as current
-                        let (p, a) = self.analyze(neighbor);
+                        let (p, a, c) = self.analyze(neighbor);
                         perimeter += p;
                         area += a;
+                        corners += c;
                     }
                 }
                 None => {
@@ -89,7 +131,7 @@ struct Plot{
             }
         }
         // mark with # to indicate region's perimeter and area has already been calculated
-        (perimeter, area)
+        (perimeter, area, corners)
     }
 }
 impl fmt::Display for Plot{
@@ -111,17 +153,19 @@ fn main() {
     let mut plot = Plot::new(load(args[1].clone()));
 
     let mut sum: u32 = 0;
+    let mut p2sum: u32 = 0;
     for lat in 0..plot.plot.len(){
         for lon in 0..plot.plot[0].len(){
             let coord = [lat,lon];
             if plot.get(coord).is_alphabetic(){
-                let (perim, area) = plot.analyze(coord);
+                let (perim, area, corners) = plot.analyze(coord);
                 let region_cost = perim * area;
                 sum += region_cost;
-                println!("{}Region Cost: {}*{}={}\n", plot, perim, area, region_cost);
+                p2sum += area*corners;
                 plot.fill(coord,'#');
             }
         }
     }
     println!("Fence cost: {}", sum);
+    println!("With bulk discount: {}", p2sum);
 }
